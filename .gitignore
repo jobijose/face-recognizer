@@ -1,0 +1,5 @@
+images/
+**.jpg
+model/
+.DS_Store
+.idea/
