@@ -1,0 +1,7 @@
+dlib==19.24.6
+Flask==3.1.0
+opencv-python==4.10.0.84
+paho-mqtt==2.1.0
+requests==2.32.3
+urllib3==2.3.0
+waitress==3.0.2

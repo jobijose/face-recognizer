@@ -3,12 +3,13 @@ import os
 
 import dlib
 from flask import Flask, request
+from waitress import serve
 import cv2 as cv2
 import numpy as np
 
 import paho.mqtt.client as mqtt
 
-MQTT_BROKER = "localhost"
+MQTT_BROKER = "escanor.local"
 # Topic on which frame will be published
 MQTT_TOPIC = "devices/camera/face_recognizer"
 
@@ -32,6 +33,7 @@ detector = dlib.get_frontal_face_detector()
 sp = dlib.shape_predictor(predictor_path)
 face_rec_model = dlib.face_recognition_model_v1(face_rec_model_path)
 img_representation = []
+
 def detect_bounding_box(vid):
     gray_image = cv2.cvtColor(vid, cv2.COLOR_BGR2GRAY)
     faces = face_classifier.detectMultiScale(gray_image, 1.1, 5, minSize=(40, 40))
@@ -68,28 +70,6 @@ def recognizer(live_image):
             else:
                 return "failed"
         
-        
-def not_required():
-    for f in glob.glob(os.path.join(faces_folder_path, "*.jpg")):
-        print("Processing file: {}".format(f))
-        img = dlib.load_rgb_image(f)
-
-        img_detected = detector(img, 1)
-
-        # Now process each face we found.
-        for k, d in enumerate(img_detected):
-            print("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(
-                k, d.left(), d.top(), d.right(), d.bottom()))
-            # Get the landmarks/parts for the face in box d.
-            shape = sp(img, d)
-           
-            print("Computing descriptor on aligned image ..")
-        
-            aligned_img = dlib.get_face_chip(img, shape)        
- 
-            img_representation = face_rec_model.compute_face_descriptor(aligned_img)
-            img_representation = np.array(img_representation)
-           
 
 app = Flask(__name__)
 
@@ -110,7 +90,7 @@ def recognizeImage():
     
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     # cv2.imshow('image', gray_frame) 
-    # filename = str(uuid.uuid4()) + ".jpg"
+    # filename =  "abc.jpg"
     
     # with open(filename, 'wb') as file:
     #     file.write(img)
@@ -141,4 +121,4 @@ def find_euclidean_distance(source, test):
 
 if __name__ == '__main__':
     initialize_data_set()
-    app.run(host='0.0.0.0', port='9090', debug=True)
+    serve(app, host='0.0.0.0', port='9090')
