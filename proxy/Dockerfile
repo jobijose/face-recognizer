@@ -23,10 +23,4 @@ RUN envsubst '$DOMAIN $PROXY_PASS' < /etc/nginx/nginx.template > /etc/nginx/ngin
 # Expose custom HTTPS port (change 8443 to your desired port)
 EXPOSE 8443
 
-# Copy the entrypoint script
-# COPY entrypoint.sh /entrypoint.sh
-# RUN chmod +x /entrypoint.sh
-
-# Run entrypoint script
-# CMD ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
