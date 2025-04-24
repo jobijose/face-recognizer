@@ -2,24 +2,48 @@ import glob
 import os
 
 import dlib
-from flask import Flask, request
-from waitress import serve
 import cv2 as cv2
 import numpy as np
-
+from datetime import datetime, timedelta
+import logging
 import paho.mqtt.client as mqtt
 
-MQTT_BROKER = "escanor.local"
+# Provide MQTT Broker host
+MQTT_BROKER = "localhost"
 # Topic on which frame will be published
 MQTT_TOPIC = "devices/camera/face_recognizer"
+RECIEVE_TOPIC= "/devices/attic/docksocket/state"
+ON = "ON"
+OFF = "OFF"
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
 
 frame = np.zeros((240, 320, 3), np.uint8)
 
+last_time = datetime.min
+last_state = OFF
+
+def on_message(client, userdata, msg):
+    received_data = msg.payload.decode("utf-8")
+    logger.info(f"Message recieved in {msg.topic} with message {received_data}")
+    global last_time, last_state
+    last_state = received_data = ON if received_data == "ON" else OFF
+    if last_state == ON:
+        last_time = datetime.now()
+        
+
 # Phao-MQTT Client
-client = mqtt.Client()
-client.username_pw_set(username="##", password="#####")
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+client.username_pw_set(username="user", password="######")
 # Establishing Connection with the Broker
 client.connect(MQTT_BROKER, 1883)
+client.on_message = on_message
+client.subscribe(RECIEVE_TOPIC, 2)
+client.loop_start()
 
 
 face_classifier = cv2.CascadeClassifier(
@@ -46,11 +70,8 @@ def use_cv2(frame) :
 
     video_frame = frame  # read frames from the video
    
-    faces = detect_bounding_box(
-        video_frame
-    )  # apply the function we created to the video frame
+    faces = detect_bounding_box(video_frame)  # apply the function we created to the video frame
 
-    
 def recognizer(live_image):
    
     live_img_detect = detector(live_image, 1)
@@ -63,44 +84,21 @@ def recognizer(live_image):
         face_descriptor = np.array(face_descriptor)
         for arr in img_representation:
             dist = find_euclidean_distance(arr, face_descriptor)
-            print("distance = {}".format(dist))
+            logger.debug("distance = {}".format(dist))
             if(dist < 0.6):
-                client.publish(MQTT_TOPIC, "ON")
+                check_and_publish(ON)
                 return "success"
             else:
-                return "failed"
-        
-
-app = Flask(__name__)
-
-@app.post('/devices/images')
-def recognizeImage():
-    img = request.files['image'].read()
-
-    # print(request.get_data())
-    # img = base64.b64decode(img)
-    # converting into numpy array from buffer
-    # print(type(img))
-    npimg = np.frombuffer(img, dtype=np.uint8)
-    # img = cv2.imread("./1.jpg")
-    
-    # Decode to Original Frame
-    # frame = cv2.imdecode(npimg, 1)
-    frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-    
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    # cv2.imshow('image', gray_frame) 
-    # filename =  "abc.jpg"
-    
-    # with open(filename, 'wb') as file:
-    #     file.write(img)
-    # use_cv2(frame)
-    recognizer(gray_frame)
-    return "success"
+                check_and_publish(OFF)
+                return "face not recognized"
+      
+    if len(live_img_detect) == 0:
+        check_and_publish(OFF)
+            
 
 def initialize_data_set():
     for f in glob.glob(os.path.join(faces_folder_path, "*.jpg")):
-        print("Processing file: {}".format(f))
+        logger.debug("Processing file: {}".format(f))
         img = dlib.load_rgb_image(f)
 
         img_detected = detector(img, 1)
@@ -119,6 +117,22 @@ def find_euclidean_distance(source, test):
     ed = np.sqrt(ed)
     return ed
 
-if __name__ == '__main__':
-    initialize_data_set()
-    serve(app, host='0.0.0.0', port='9090')
+def check_and_publish(message):
+    global last_time, last_state
+    past_time = datetime.now() - timedelta(hours=1)
+    logger.debug(f"Past time: {past_time} and last time: {last_time}")
+    if last_time < past_time:
+        if last_state != message:
+            client.publish(MQTT_TOPIC, message)
+            logger.info(f"Message published with message: {message}")
+            last_state = message
+            client.publish(MQTT_TOPIC, message)
+        if last_state == ON:
+            last_time = datetime.now()
+    else:
+        if message == ON:
+            if last_state == OFF:
+                logger.info(f"Message published with message: {message}")
+                client.publish(MQTT_TOPIC, message)
+            last_state = message
+            last_time = datetime.now()

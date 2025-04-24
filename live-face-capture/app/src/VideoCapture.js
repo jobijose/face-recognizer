@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 
 // API endpoint from Docker ENV
-const API_ENDPOINT = process.env.BACKEND_API_ENDPOINT || "https://localhost:8443/devices/images";
+const API_ENDPOINT = "https://localhost:8080/upload";
 
 const VideoCapture = () => {
   const videoRef = useRef(null);
@@ -48,7 +48,6 @@ const VideoCapture = () => {
               "Accept": "application/json", 
             }
           });
-          console.log("Frame sent to:", formData);
         } catch (error) {
           console.error("Error sending frame:", error);
         }

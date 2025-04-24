@@ -5,3 +5,5 @@ paho-mqtt==2.1.0
 requests==2.32.3
 urllib3==2.3.0
 waitress==3.0.2
+fastapi==0.110.0
+uvicorn[standard]==0.29.0

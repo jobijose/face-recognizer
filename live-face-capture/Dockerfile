@@ -12,9 +12,6 @@ RUN npm install
 COPY app/ .
 COPY certs/ .
 
-# Build the web app with API endpoint as an environment variable
-ARG BACKEND_API_ENDPOINT
-ENV BACKEND_API_ENDPOINT=${BACKEND_API_ENDPOINT}
 RUN npm run build
 
 RUN npm install -g serve
