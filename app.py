@@ -20,6 +20,7 @@ app.add_middleware(
 
 static_path = os.path.join("resources", "static")
 app.mount("/static", StaticFiles(directory=static_path), name="static")
+initialize_data_set() # Initialize the dataset upon startup
 
 @app.post("/devices/images")
 async def recognize_image(image: UploadFile = File(...)):
@@ -38,6 +39,3 @@ async def download_page(request: Request):
 async def download_file():
     file_path = "resources/ssl/client.crt"
     return FileResponse(path=file_path, filename="client.crt", media_type="application/octet-stream")
-
-if __name__ == "__main__":
-    initialize_data_set()

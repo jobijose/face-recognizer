@@ -58,20 +58,6 @@ sp = dlib.shape_predictor(predictor_path)
 face_rec_model = dlib.face_recognition_model_v1(face_rec_model_path)
 img_representation = []
 
-def detect_bounding_box(vid):
-    gray_image = cv2.cvtColor(vid, cv2.COLOR_BGR2GRAY)
-    faces = face_classifier.detectMultiScale(gray_image, 1.1, 5, minSize=(40, 40))
-    for (x, y, w, h) in faces:
-        cv2.rectangle(vid, (x, y), (x + w, y + h), (0, 255, 0), 4)
-        
-    return faces
-
-def use_cv2(frame) :
-
-    video_frame = frame  # read frames from the video
-   
-    faces = detect_bounding_box(video_frame)  # apply the function we created to the video frame
-
 def recognizer(live_image):
    
     live_img_detect = detector(live_image, 1)

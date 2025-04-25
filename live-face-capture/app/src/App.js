@@ -8,7 +8,6 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<VideoCapture />} />
-        <Route path="/download" element={<DownloadFile />} />
       </Routes>
     </Router>
   );

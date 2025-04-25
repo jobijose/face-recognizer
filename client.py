@@ -4,7 +4,7 @@ import paho.mqtt.client as mqtt
 import base64
 import time
 
-MQTT_BROKER = "192.168.2.5"
+MQTT_BROKER = "localhost"
 # Topic on which frame will be published
 MQTT_SEND = "devices/ip_stream"
 # Object to capture the frames
@@ -31,4 +31,3 @@ try:
 except:
  cap.release()
  client.disconnect()
- print("\nNow you can restart fresh")
