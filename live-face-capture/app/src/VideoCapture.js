@@ -35,7 +35,19 @@ const VideoCapture = () => {
     const ctx = canvas.getContext("2d");
 
     setInterval(() => {
-      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      var video = videoRef.current;
+      const isPortrait = video.videoHeight > video.videoWidth;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      if (isPortrait) {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.drawImage(videoRef.current, -video.videoWidth / 2, - video.videoHeight/ 2, video.videoWidth, video.videoHeight);
+        ctx.restore();
+      } else {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width , canvas.height);
+      }
+
       canvas.toBlob(async (blob) => {
         const formData = new FormData();
         formData.append("image", blob, "frame.jpg");

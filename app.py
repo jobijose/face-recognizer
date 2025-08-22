@@ -37,5 +37,5 @@ async def download_page(request: Request):
 
 @app.get("/download")
 async def download_file():
-    file_path = "resources/ssl/client.crt"
+    file_path = "resources/ssl/ca/ca.crt"
     return FileResponse(path=file_path, filename="client.crt", media_type="application/octet-stream")
