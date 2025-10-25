@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 import logging
 import paho.mqtt.client as mqtt
 
-# Provide MQTT Broker host
 MQTT_BROKER = "localhost"
 # Topic on which frame will be published
 MQTT_TOPIC = "devices/camera/face_recognizer"
@@ -26,6 +25,7 @@ frame = np.zeros((240, 320, 3), np.uint8)
 
 last_time = datetime.min
 last_state = OFF
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
 
 def on_message(client, userdata, msg):
     received_data = msg.payload.decode("utf-8")
@@ -34,16 +34,15 @@ def on_message(client, userdata, msg):
     last_state = received_data = ON if received_data == "ON" else OFF
     if last_state == ON:
         last_time = datetime.now()
-        
 
-# Phao-MQTT Client
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
-client.username_pw_set(username="user", password="######")
-# Establishing Connection with the Broker
-client.connect(MQTT_BROKER, 1883)
-client.on_message = on_message
-client.subscribe(RECIEVE_TOPIC, 2)
-client.loop_start()
+
+def start_mqtt():
+    client.username_pw_set(username="user", password="######")
+    # Establishing Connection with the Broker
+    client.connect(MQTT_BROKER, 1883)
+    client.on_message = on_message
+    client.subscribe(RECIEVE_TOPIC, 2)
+    client.loop_start()
 
 
 face_classifier = cv2.CascadeClassifier(
@@ -58,8 +57,19 @@ sp = dlib.shape_predictor(predictor_path)
 face_rec_model = dlib.face_recognition_model_v1(face_rec_model_path)
 img_representation = []
 
+def detect_bounding_box(vid):
+    gray_image = cv2.cvtColor(vid, cv2.COLOR_BGR2GRAY)
+    faces = face_classifier.detectMultiScale(gray_image, 1.1, 5, minSize=(40, 40))
+    for (x, y, w, h) in faces:
+        cv2.rectangle(vid, (x, y), (x + w, y + h), (0, 255, 0), 4)
+
+    return faces
+
+def use_cv2(frame) :
+    video_frame = frame  # read frames from the video
+    faces = detect_bounding_box(video_frame)  # apply the function we created to the video frame
+
 def recognizer(live_image):
-   
     live_img_detect = detector(live_image, 1)
     print("No of face detected: " + str(len(live_img_detect)))
     face_descriptor = np.empty(1)
@@ -77,10 +87,9 @@ def recognizer(live_image):
             else:
                 check_and_publish(OFF)
                 return "face not recognized"
-      
+
     if len(live_img_detect) == 0:
         check_and_publish(OFF)
-            
 
 def initialize_data_set():
     for f in glob.glob(os.path.join(faces_folder_path, "*.jpg")):
@@ -92,11 +101,11 @@ def initialize_data_set():
         # Now process each face we found.
         for k, d in enumerate(img_detected):
             shape = sp(img, d)
-            aligned_img = dlib.get_face_chip(img, shape)        
+            aligned_img = dlib.get_face_chip(img, shape)
             img_array_represent = face_rec_model.compute_face_descriptor(aligned_img)
             img_array_represent = np.array(img_array_represent)
             img_representation.append(img_array_represent)
-            
+
 def find_euclidean_distance(source, test):
     ed = source - test
     ed = np.sum(np.multiply(ed, ed))
@@ -108,6 +117,7 @@ def check_and_publish(message):
     past_time = datetime.now() - timedelta(hours=1)
     logger.debug(f"Past time: {past_time} and last time: {last_time}")
     if last_time < past_time:
+        logger.info(f"Message: {message}")
         if last_state != message:
             client.publish(MQTT_TOPIC, message)
             logger.info(f"Message published with message: {message}")
