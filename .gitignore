@@ -5,3 +5,4 @@ model/
 .idea/
 proxy/ssl/
 resources/ssl/
+**/.pio/
