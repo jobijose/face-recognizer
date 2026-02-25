@@ -3,7 +3,7 @@
 #include <esp_camera.h>
 #include "config.h"
 
-#define CAPTURE_INTERVAL_MS 5000
+#define CAPTURE_INTERVAL_MS 2000
 
 // ---- Camera pins (XIAO ESP32-S3 Sense) ----
 #define PWDN_GPIO_NUM  -1
@@ -45,8 +45,8 @@ void initCamera() {
     config.pin_reset    = RESET_GPIO_NUM;
     config.xclk_freq_hz = 20000000;
     config.pixel_format = PIXFORMAT_JPEG;
-    config.frame_size   = FRAMESIZE_SVGA;
-    config.jpeg_quality = 12;
+    config.frame_size   = FRAMESIZE_XGA;
+    config.jpeg_quality = 8;
     config.fb_count     = 2;
 
     if (esp_camera_init(&config) != ESP_OK) {
@@ -78,8 +78,8 @@ void captureAndSend() {
         esp_camera_fb_return(fb);
         return;
     }
-    memcpy(body,                          head.c_str(), head.length());
-    memcpy(body + head.length(),          fb->buf,      fb->len);
+    memcpy(body, head.c_str(), head.length());
+    memcpy(body + head.length(), fb->buf, fb->len);
     memcpy(body + head.length() + fb->len, tail.c_str(), tail.length());
 
     esp_camera_fb_return(fb);
