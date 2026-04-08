@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request, File, UploadFile
+from fastapi import FastAPI, Request, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -10,11 +10,14 @@ from server_face_recognition import initialize_data_set, recognizer
 
 app = FastAPI()
 
+allowed_origins = os.environ.get("ALLOWED_ORIGINS", "").split(",")
+allowed_origins = [o.strip() for o in allowed_origins if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins="*",
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -24,9 +27,13 @@ initialize_data_set() # Initialize the dataset upon startup
 
 @app.post("/devices/images")
 async def recognize_image(image: UploadFile = File(...)):
+    if image.content_type not in ("image/jpeg", "image/png", "image/webp"):
+        raise HTTPException(status_code=400, detail="Unsupported image type")
     img = await image.read()
     npimg = np.frombuffer(img, dtype=np.uint8)
     frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+    if frame is None:
+        raise HTTPException(status_code=400, detail="Invalid or corrupt image")
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     result = recognizer(gray_frame)
     return JSONResponse(content={"status": result})
