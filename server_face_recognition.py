@@ -37,7 +37,10 @@ def on_message(client, userdata, msg):
 
 
 def start_mqtt():
-    client.username_pw_set(username=os.environ.get("MQTT_USERNAME", "user"), password=os.environ.get("MQTT_PASSWORD", ""))
+    mqtt_password = os.environ.get("MQTT_PASSWORD")
+    if not mqtt_password:
+        raise ValueError("MQTT_PASSWORD environment variable is required")
+    client.username_pw_set(username=os.environ.get("MQTT_USERNAME", "user"), password=mqtt_password)
     # Establishing Connection with the Broker
     client.connect(MQTT_BROKER, 1883)
     client.on_message = on_message
