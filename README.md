@@ -49,3 +49,18 @@ docker build -t live-face-capture:2.0 .
 - `POST /devices/images`  
   Upload an image for face recognition.
 
+  When `API_KEY` is set, the request must include an `X-API-Key` header with that value.
+
+## Configuration
+
+All settings are read from environment variables; keep secrets out of source control.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `API_KEY` | _(empty, no auth)_ | Shared key required in the `X-API-Key` header for image uploads. Strongly recommended on any shared network. |
+| `ALLOWED_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated CORS origins allowed to call the API. |
+| `MAX_UPLOAD_BYTES` | `5242880` | Maximum accepted upload size. |
+| `OPENCV_IO_MAX_IMAGE_PIXELS` | `16777216` | Maximum decoded image size, guards against decompression bombs. |
+| `MQTT_BROKER` / `MQTT_PORT` | `localhost` / `1883` | MQTT broker address. |
+| `MQTT_USERNAME` / `MQTT_PASSWORD` | _(unset)_ | MQTT credentials. |
+| `MQTT_TLS` | `false` | Set to `true` to connect to the broker over TLS. |
