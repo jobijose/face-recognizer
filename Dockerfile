@@ -7,6 +7,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
 
-EXPOSE 5000
+# Run as an unprivileged user instead of root.
+RUN useradd --create-home --uid 10001 appuser && chown -R appuser /app
+USER appuser
 
-CMD ["python", "server_face_recognition.py"]
+EXPOSE 9090
+
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9090"]

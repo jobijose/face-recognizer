@@ -8,7 +8,11 @@ from datetime import datetime, timedelta
 import logging
 import paho.mqtt.client as mqtt
 
-MQTT_BROKER = "localhost"
+MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_USERNAME = os.getenv("MQTT_USERNAME")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+MQTT_TLS = os.getenv("MQTT_TLS", "false").lower() == "true"
 # Topic on which frame will be published
 MQTT_TOPIC = "devices/camera/face_recognizer"
 RECIEVE_TOPIC= "/devices/attic/docksocket/state"
@@ -37,9 +41,13 @@ def on_message(client, userdata, msg):
 
 
 def start_mqtt():
-    client.username_pw_set(username="user", password="######")
+    # Credentials come from the environment so they are never committed to source.
+    if MQTT_USERNAME:
+        client.username_pw_set(username=MQTT_USERNAME, password=MQTT_PASSWORD)
+    if MQTT_TLS:
+        client.tls_set()
     # Establishing Connection with the Broker
-    client.connect(MQTT_BROKER, 1883)
+    client.connect(MQTT_BROKER, MQTT_PORT)
     client.on_message = on_message
     client.subscribe(RECIEVE_TOPIC, 2)
     client.loop_start()
